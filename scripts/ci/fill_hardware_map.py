@@ -22,7 +22,7 @@ pca_to_board = {
     "PCA10059": "nrf52840dongle_nrf52840",
     "PCA10095": "nrf5340dk_nrf5340_cpuapp",
     "PCA20053": "thingy53_nrf5340_cpuapp",
-    "PCA10145": "nrf54h20dk_nrf54h20_cpuapp@soc1",
+    # "PCA10145": "nrf54h20dk_nrf54h20_cpuapp@soc1",
 }
 
 family_to_pca = {
@@ -32,7 +32,7 @@ family_to_pca = {
     "NRF52840DONGLE": "PCA10059",
     "NRF5340": "PCA10095",
     "THINGY53": "PCA20053",
-    "NRF54H20": "PCA10145"
+    # "NRF54H20": "PCA10145"
 }
 
 
