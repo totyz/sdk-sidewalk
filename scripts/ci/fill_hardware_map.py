@@ -86,6 +86,7 @@ def main(hardware_map_path: str, userdev_conf_path: str):
             out = subprocess.run(
                 device_version_cmd, capture_output=True)
             family_string = out.stdout.decode("utf-8").split("_")[0]
+            logging.info(f"{segger=}, {family_string=}, out={out.stdout.decode('utf-8')}")
             matched_pcas = (
                 [family_to_pca[family_string]
                  ] if out.returncode == 0 and family_string in family_to_pca else []
@@ -105,7 +106,7 @@ def main(hardware_map_path: str, userdev_conf_path: str):
                     continue
             else:
                 logging.warning("Recover on NRF54H family is not supported yet.")
-                
+
             try:
                 hw_entry["platform"] = pca_to_board[matched_pcas[0]]
             except KeyError:
