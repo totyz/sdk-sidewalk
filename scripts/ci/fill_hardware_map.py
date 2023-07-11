@@ -22,6 +22,7 @@ pca_to_board = {
     "PCA10059": "nrf52840dongle_nrf52840",
     "PCA10095": "nrf5340dk_nrf5340_cpuapp",
     "PCA20053": "thingy53_nrf5340_cpuapp",
+    "PCA10145": "nrf54h20dk_nrf54h20_cpuapp@soc1",
 }
 
 family_to_pca = {
@@ -31,6 +32,7 @@ family_to_pca = {
     "NRF52840DONGLE": "PCA10059",
     "NRF5340": "PCA10095",
     "THINGY53": "PCA20053",
+    "NRF54H20": "PCA10145"
 }
 
 
@@ -77,8 +79,12 @@ def main(hardware_map_path: str, userdev_conf_path: str):
             ]
         else:
             # Read out device family
+            if segger.startswith("10508"):
+                device_version_cmd = ["nrfjprog", "--deviceversion", "--snr", segger, "--family", "nrf54h"]
+            else:
+                device_version_cmd = ["nrfjprog", "--deviceversion", "--snr", segger]
             out = subprocess.run(
-                ["nrfjprog", "--deviceversion", "--snr", segger], capture_output=True)
+                device_version_cmd, capture_output=True)
             family_string = out.stdout.decode("utf-8").split("_")[0]
             matched_pcas = (
                 [family_to_pca[family_string]
@@ -86,15 +92,20 @@ def main(hardware_map_path: str, userdev_conf_path: str):
             )
         if matched_pcas:
             # recover DK
-            logging.debug(
-                "Call nrfjprog --recover to check if board is operable.")
-            recover = subprocess.run(
-                ["nrfjprog", "--recover", "--snr", segger], capture_output=True)
-            if recover.returncode != 0:
-                # it is OK to continue if recovery fail. This DK will not be taken to test
-                logging.warning(
-                    f"Not possible to recover {segger} board, remove from available boards.")
-                continue
+            if not segger.startswith("10508"):
+                logging.debug(
+                    "Call nrfjprog --recover to check if board is operable.")
+                recover = subprocess.run(
+                    ["nrfjprog", "--recover", "--snr", segger], capture_output=True)
+                if recover.returncode != 0:
+                    # it is OK to continue if recovery fail. This DK will not be taken to test
+                    logging.warning(
+                        f"Not possible to recover {segger} board, remove from available boards.")
+                    to_remove.append(hw_entry)
+                    continue
+            else:
+                logging.warning("Recover on NRF54H family is not supported yet.")
+                
             try:
                 hw_entry["platform"] = pca_to_board[matched_pcas[0]]
             except KeyError:
