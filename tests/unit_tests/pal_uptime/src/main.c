@@ -1,20 +1,12 @@
-/*
- * Copyright (c) 2022 Nordic Semiconductor ASA
- *
- * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
- */
-#include <unity.h>
+#include <zephyr/ztest.h>
 #include <sid_pal_uptime_ifc.h>
 #include <zephyr/sys_clock.h>
-#include <cmock_zephyr_time.h>
+#include <zephyr/fff.h>
 
-void setUp(void)
-{
-}
+DEFINE_FFF_GLOBALS;
 
-/******************************************************************
-* sid_pal_uptime_ifc
-* ****************************************************************/
+FAKE_VALUE_FUNC(uint64_t, zephyr_uptime_ns);
+
 static void uptime_test_time(uint64_t uptime_nanoseconds)
 {
 	uint32_t seconds, nanoseconds;
@@ -23,16 +15,16 @@ static void uptime_test_time(uint64_t uptime_nanoseconds)
 	seconds = (uint32_t)(uptime_nanoseconds / NSEC_PER_SEC);
 	nanoseconds = (uint32_t)(uptime_nanoseconds % NSEC_PER_SEC);
 
-	__cmock_zephyr_uptime_ns_ExpectAndReturn(uptime_nanoseconds);
-	TEST_ASSERT_EQUAL(SID_ERROR_NONE, sid_pal_uptime_now(&sid_time));
+	zephyr_uptime_ns_fake.return_val = uptime_nanoseconds;
+	zassert_equal(SID_ERROR_NONE, sid_pal_uptime_now(&sid_time), NULL);
 
-	TEST_ASSERT_EQUAL(seconds, sid_time.tv_sec);
-	TEST_ASSERT_EQUAL(nanoseconds, sid_time.tv_nsec);
+	zassert_equal(seconds, sid_time.tv_sec, NULL);
+	zassert_equal(nanoseconds, sid_time.tv_nsec, NULL);
 }
 
-void test_sid_pal_uptime_get_now(void)
+ZTEST(sid_pal_uptime, test_sid_pal_uptime_get_now)
 {
-	TEST_ASSERT_EQUAL(SID_ERROR_NULL_POINTER, sid_pal_uptime_now(NULL));
+	zassert_equal(SID_ERROR_NULL_POINTER, sid_pal_uptime_now(NULL), NULL);
 
 	uptime_test_time(0ull);
 	uptime_test_time(1ull * NSEC_PER_SEC + 10ull);
@@ -42,23 +34,14 @@ void test_sid_pal_uptime_get_now(void)
 	uptime_test_time(ULLONG_MAX);
 }
 
-void test_sid_pal_uptime_accuracy(void)
+ZTEST(sid_pal_uptime, test_sid_pal_uptime_accuracy)
 {
 	/* Note: This is a oversimplified test for dummy implementation.*/
 	int16_t ppm;
 
 	ppm = sid_pal_uptime_get_xtal_ppm();
 	sid_pal_uptime_set_xtal_ppm(ppm);
-	TEST_ASSERT_EQUAL(ppm, sid_pal_uptime_get_xtal_ppm());
+	zassert_equal(ppm, sid_pal_uptime_get_xtal_ppm(), NULL);
 }
 
-/* It is required to be added to each test. That is because unity is using
- * different main signature (returns int) and zephyr expects main which does
- * not return value.
- */
-extern int unity_main(void);
-
-int main(void)
-{
-	return unity_main();
-}
+ZTEST_SUITE(sid_pal_uptime, NULL, NULL, NULL, NULL, NULL);
