@@ -5,13 +5,19 @@
 #
 
 cmake_minimum_required(VERSION 3.20.0)
-
-find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(BOARD unit_testing)
+find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(sidewalk_test_assert)
+set(SIDEWALK_BASE $ENV{ZEPHYR_BASE}/../sidewalk)
 
 # add test file
 FILE(GLOB app_sources src/*.c)
-target_sources(app PRIVATE ${app_sources})
+target_sources(testbinary PRIVATE
+    ${app_sources}
+    ${SIDEWALK_BASE}/subsys/sal/sid_pal/src/sid_assert.c    
+)
 
-# generate runner for the test
-test_runner_generate(${app_sources})
+target_include_directories(testbinary PRIVATE
+    ${SIDEWALK_BASE}/subsys/sal/common/sid_pal_ifc
+)
